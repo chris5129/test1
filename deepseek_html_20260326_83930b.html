@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>交流充电桩投建测算平台 | 投资回报分析工具</title>
+    <!-- 引入 Chart.js CDN 用于图表展示 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- 引入 Font Awesome 6 (免费图标库) 用于图标装饰 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e9f0f5 0%, #d9e2ec 100%);
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
+        }
+
+        /* 主容器 */
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            padding: 2rem 2rem 2rem 2rem;
+            transition: all 0.2s;
+        }
+
+        /* 头部区域 */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid rgba(16, 94, 84, 0.2);
+            padding-bottom: 1rem;
+        }
+        .header h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1E6F5C, #289672);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            color: #2c4b3e;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+        .badge {
+            background: #1e6f5c20;
+            display: inline-block;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            color: #1e6f5c;
+            margin-top: 0.6rem;
+        }
+
+        /* 两列布局 */
+        .grid-main {
+            display: grid;
+            grid-template-columns: 1fr 0.9fr;
+            gap: 1.8rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* 左侧参数卡片 */
+        .params-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.4rem 1.6rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+            border: 1px solid #eef2f0;
+        }
+        .params-card h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1e3a34;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 5px solid #289672;
+            padding-left: 0.9rem;
+        }
+        .param-group {
+            margin-bottom: 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .param-label {
+            flex: 1 1 45%;
+            font-weight: 600;
+            color: #2c5a4c;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .param-label i {
+            width: 1.4rem;
+            color: #289672;
+            font-size: 1rem;
+        }
+        .param-input {
+            flex: 1 1 45%;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .param-input input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbdcd6;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: #fefefe;
+            transition: 0.2s;
+        }
+        .param-input input:focus {
+            outline: none;
+            border-color: #289672;
+            box-shadow: 0 0 0 2px #28967230;
+        }
+        .unit {
+            font-size: 0.8rem;
+            color: #6f8f82;
+            min-width: 40px;
+        }
+        .hint {
+            font-size: 0.7rem;
+            color: #719684;
+            margin-top: 4px;
+            text-align: right;
+            width: 100%;
+        }
+        hr {
+            margin: 1rem 0;
+            border: none;
+            height: 1px;
+            background: #e2e8e4;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1rem;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            background: #ecf7f3;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 2rem;
+            font-weight: 500;
+            font-size: 0.75rem;
+            color: #1e6f5c;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            text-align: center;
+        }
+        .preset-btn:hover {
+            background: #289672;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* 右侧结果卡片 */
+        .result-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.4rem 1.6rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f0;
+        }
+        .result-card h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1e3a34;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 5px solid #f4b942;
+            padding-left: 0.9rem;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .kpi-item {
+            background: #f8fbf9;
+            border-radius: 1.2rem;
+            padding: 0.9rem;
+            text-align: center;
+            transition: 0.1s;
+        }
+        .kpi-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #5f7f72;
+            font-weight: 600;
+        }
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1e3a34;
+            margin-top: 0.3rem;
+            word-break: break-word;
+        }
+        .kpi-sub {
+            font-size: 0.7rem;
+            color: #289672;
+        }
+        .warning-text {
+            background: #fff3e0;
+            border-radius: 1rem;
+            padding: 0.6rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #c97e0a;
+            margin-top: 0.8rem;
+        }
+        .util-rate {
+            font-size: 0.85rem;
+            background: #eef2f0;
+            border-radius: 1rem;
+            padding: 0.4rem;
+            text-align: center;
+            margin-top: 0.8rem;
+        }
+
+        /* 图表区域 */
+        .chart-area {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem 1rem 0.8rem 1rem;
+            margin-top: 0.8rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+        .chart-area h4 {
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            color: #2c5a4c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        canvas {
+            max-height: 320px;
+            width: 100%;
+        }
+        .footnote {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #7c9a8c;
+            margin-top: 1rem;
+            border-top: 1px solid #cde0d8;
+            padding-top: 1rem;
+        }
+
+        @media (max-width: 880px) {
+            .grid-main {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .dashboard {
+                padding: 1.2rem;
+            }
+            .kpi-value {
+                font-size: 1.3rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .param-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            .param-input {
+                width: 100%;
+            }
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        button {
+            background: none;
+            border: none;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">
+        <h1><i class="fas fa-charging-station"></i> 交流充电桩投建测算系统</h1>
+        <p>静态投资回报模型 · 精准测算收益与回本周期</p>
+        <div class="badge"><i class="fas fa-chart-line"></i> 适用于7kW/11kW交流桩 · 基于服务费收益模型</div>
+    </div>
+
+    <div class="grid-main">
+        <!-- 左侧参数面板 -->
+        <div class="params-card">
+            <h3><i class="fas fa-sliders-h"></i> 核心参数配置</h3>
+            <div class="param-group">
+                <span class="param-label"><i class="fas fa-plug"></i> 充电桩数量</span>
+                <div class="param-input">
+                    <input type="number" id="pileCount" value="10" step="1" min="1" max="200">
+                    <span class="unit">台</span>
+                </div>
+                <div class="hint">交流桩规模</div>
+            </div>
+            <div class="param-group">
+                <span class="param-label"><i class="fas fa-bolt"></i> 单桩功率</span>
+                <div class="param-input">
+                    <input type="number" id="powerKw" value="7.0" step="0.5" min="3.3" max="22">
+                    <span class="unit">kW</span>
+                </div>
+                <div class="hint">常见交流桩7kW / 11kW</div>
+            </div>
+            <div class="param-group">
+                <span class="param-label"><i class="fas fa-coins"></i> 单桩综合成本</span>
+                <div class="param-input">
+                    <input type="number" id="costPerUnit" value="15000" step="500" min="5000" max="35000">
+                    <span class="unit">元/桩</span>
+                </div>
+                <div class="hint">含桩体、施工、电缆、基础等</div>
+            </div>
+            <div class="param-group">
+                <span class="param-label"><i class="fas fa-sun"></i> 日均有效充电时长</span>
+                <div class="param-input">
+                    <input type="number" id="dailyHours" value="4.0" step="0.5" min="0.5" max="24">
+                    <span class="unit">小时/天</span>
+                </div>
+                <div class="hint">实际运营平均每桩每天充电小时数</div>
+            </div>
+            <div class="param-group">
+                <span class="param-label"><i class="fas fa-tag"></i> 服务费单价</span>
+                <div class="param-input">
+                    <input type="number" id="serviceFee" value="0.50" step="0.05" min="0.2" max="1.5">
+                    <span class="unit">元/kWh</span>
+                </div>
+                <div class="hint">运营商净收益部分</div>
+            </div>
+            <div class="param-group">
+                <span class="param-label"><i class="fas fa-tools"></i> 单桩年运维成本</span>
+                <div class="param-input">
+                    <input type="number" id="opexPerPile" value="500" step="50" min="0" max="2000">
+                    <span class="unit">元/桩/年</span>
+                </div>
+                <div class="hint">维护、平台、保险等</div>
+            </div>
+            <div class="param-group">
+                <span class="param-label"><i class="fas fa-gift"></i> 一次性补贴/奖励</span>
+                <div class="param-input">
+                    <input type="number" id="subsidy" value="0" step="5000" min="0" max="300000">
+                    <span class="unit">元</span>
+                </div>
+                <div class="hint">政府补贴或建设奖励 (抵扣初始投资)</div>
+            </div>
+            <hr>
+            <div class="preset-buttons">
+                <button class="preset-btn" data-preset="residential"><i class="fas fa-home"></i> 住宅小区</button>
+                <button class="preset-btn" data-preset="office"><i class="fas fa-building"></i> 办公园区</button>
+                <button class="preset-btn" data-preset="commercial"><i class="fas fa-store"></i> 商场快充</button>
+                <button class="preset-btn" data-preset="high"><i class="fas fa-chart-line"></i> 高利用率场景</button>
+            </div>
+        </div>
+
+        <!-- 右侧KPI结果 -->
+        <div class="result-card">
+            <h3><i class="fas fa-chart-pie"></i> 投资测算结果</h3>
+            <div class="kpi-grid">
+                <div class="kpi-item"><div class="kpi-label">初始投资总额</div><div class="kpi-value" id="totalInvestment">—</div><div class="kpi-sub">扣除补贴后</div></div>
+                <div class="kpi-item"><div class="kpi-label">年充电总量</div><div class="kpi-value" id="annualEnergy">—</div><div class="kpi-sub">kWh/年</div></div>
+                <div class="kpi-item"><div class="kpi-label">年服务费收入</div><div class="kpi-value" id="annualRevenue">—</div><div class="kpi-sub">元/年</div></div>
+                <div class="kpi-item"><div class="kpi-label">年运维总成本</div><div class="kpi-value" id="annualOpex">—</div><div class="kpi-sub">元/年</div></div>
+                <div class="kpi-item"><div class="kpi-label">年净利润</div><div class="kpi-value" id="annualProfit">—</div><div class="kpi-sub">税前净现金流</div></div>
+                <div class="kpi-item"><div class="kpi-label">静态回收期</div><div class="kpi-value" id="paybackPeriod">—</div><div class="kpi-sub">年</div></div>
+                <div class="kpi-item"><div class="kpi-label">投资回报率(ROI)</div><div class="kpi-value" id="roi">—</div><div class="kpi-sub">年化收益率</div></div>
+                <div class="kpi-item"><div class="kpi-label">等效利用率</div><div class="kpi-value" id="utilRate">—</div><div class="kpi-sub">日均小时/24h</div></div>
+            </div>
+            <div id="warningMsg" class="warning-text" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i> 注意：净利润为负或零，无法回本，请调整利用率/成本/服务费等参数。
+            </div>
+            <div class="util-rate" id="adviceMsg">
+                <i class="fas fa-lightbulb"></i> 提示：日均充电时长越高，收益表现越佳。
+            </div>
+        </div>
+    </div>
+
+    <!-- 现金流图表区域 -->
+    <div class="chart-area">
+        <h4><i class="fas fa-chart-line"></i> 累计现金流预测 (10年) &nbsp;<span style="font-size:0.7rem; font-weight:normal;">基于稳定年利润</span></h4>
+        <canvas id="cashflowChart" width="800" height="350" style="width:100%; height:auto; max-height: 340px;"></canvas>
+        <div class="footnote">
+            * 静态模型，不考虑折现率与税收，年利润恒定。回本点即累计现金流由负转正年份。
+        </div>
+    </div>
+</div>
+
+<script>
+    // DOM 元素绑定
+    const inputs = {
+        pileCount: document.getElementById('pileCount'),
+        powerKw: document.getElementById('powerKw'),
+        costPerUnit: document.getElementById('costPerUnit'),
+        dailyHours: document.getElementById('dailyHours'),
+        serviceFee: document.getElementById('serviceFee'),
+        opexPerPile: document.getElementById('opexPerPile'),
+        subsidy: document.getElementById('subsidy')
+    };
+
+    // 展示字段
+    const totalInvestmentEl = document.getElementById('totalInvestment');
+    const annualEnergyEl = document.getElementById('annualEnergy');
+    const annualRevenueEl = document.getElementById('annualRevenue');
+    const annualOpexEl = document.getElementById('annualOpex');
+    const annualProfitEl = document.getElementById('annualProfit');
+    const paybackPeriodEl = document.getElementById('paybackPeriod');
+    const roiEl = document.getElementById('roi');
+    const utilRateEl = document.getElementById('utilRate');
+    const warningMsgDiv = document.getElementById('warningMsg');
+    const adviceMsgSpan = document.getElementById('adviceMsg');
+
+    let chartInstance = null;   // 全局chart实例
+
+    // 辅助：千位格式化
+    function formatMoney(value) {
+        if (value === undefined || isNaN(value)) return '0';
+        return Math.round(value).toLocaleString('zh-CN');
+    }
+    function formatDecimal(value, digits = 2) {
+        if (isNaN(value)) return '0';
+        return value.toFixed(digits);
+    }
+
+    // 核心测算函数
+    function calculateMetrics() {
+        // 获取数值
+        let count = parseFloat(inputs.pileCount.value) || 0;
+        let power = parseFloat(inputs.powerKw.value) || 0;
+        let costUnit = parseFloat(inputs.costPerUnit.value) || 0;
+        let dailyHrs = parseFloat(inputs.dailyHours.value) || 0;
+        let fee = parseFloat(inputs.serviceFee.value) || 0;
+        let opexPer = parseFloat(inputs.opexPerPile.value) || 0;
+        let subsidyVal = parseFloat(inputs.subsidy.value) || 0;
+        
+        if (count < 1) count = 1;
+        if (power <= 0) power = 3.3;
+        if (dailyHrs < 0) dailyHrs = 0;
+        if (dailyHrs > 24) dailyHrs = 24;
+        
+        // 初始投资总额 (单桩综合成本 * 数量 - 补贴，不低于0)
+        let grossInvestment = count * costUnit;
+        let totalInvestment = Math.max(0, grossInvestment - subsidyVal);
+        
+        // 年充电量 (kWh) = 桩数 * 功率 * 日均小时 * 365
+        let annualEnergy = count * power * dailyHrs * 365;
+        // 年服务费收入
+        let annualRevenue = annualEnergy * fee;
+        // 年运维总成本
+        let annualOpex = count * opexPer;
+        // 年净利润
+        let annualProfit = annualRevenue - annualOpex;
+        
+        // 静态回收期 (年)  当净利润 <=0 时，无法回收
+        let paybackYears = (annualProfit > 0 && totalInvestment > 0) ? totalInvestment / annualProfit : Infinity;
+        let roi = (annualProfit > 0 && totalInvestment > 0) ? (annualProfit / totalInvestment) * 100 : 0;
+        
+        // 等效利用率 = 日均小时 / 24
+        let utilRate = (dailyHrs / 24) * 100;
+        
+        // 更新DOM
+        totalInvestmentEl.innerText = formatMoney(totalInvestment) + ' 元';
+        annualEnergyEl.innerText = formatMoney(annualEnergy) + ' kWh';
+        annualRevenueEl.innerText = formatMoney(annualRevenue) + ' 元';
+        annualOpexEl.innerText = formatMoney(annualOpex) + ' 元';
+        annualProfitEl.innerText = formatMoney(annualProfit) + ' 元';
+        
+        if (isFinite(paybackYears) && annualProfit > 0) {
+            paybackPeriodEl.innerText = formatDecimal(paybackYears, 2) + ' 年';
+        } else if (annualProfit <= 0) {
+            paybackPeriodEl.innerText = '无法回本';
+        } else if (totalInvestment <= 0) {
+            paybackPeriodEl.innerText = '0.00 年 (无投资)';
+        } else {
+            paybackPeriodEl.innerText = '∞';
+        }
+        
+        roiEl.innerText = formatDecimal(roi, 2) + '%';
+        utilRateEl.innerText = formatDecimal(utilRate, 1) + '%';
+        
+        // 警告处理
+        if (annualProfit <= 0) {
+            warningMsgDiv.style.display = 'block';
+            warningMsgDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 警告：年净利润为负或为零，无法覆盖运维成本！请提高日均充电时长/服务费或降低投资成本。';
+        } else if (paybackYears > 10) {
+            warningMsgDiv.style.display = 'block';
+            warningMsgDiv.innerHTML = '<i class="fas fa-clock"></i> 回收期超过10年，投资收益偏低，建议优化利用率或服务费策略。';
+        } else {
+            warningMsgDiv.style.display = 'none';
+        }
+        
+        // 智能提示
+        if (dailyHrs < 2.5) {
+            adviceMsgSpan.innerHTML = '<i class="fas fa-lightbulb"></i> 当前利用率较低，日均充电时长不足2.5小时，严重影响盈利能力，考虑提升引流或增加运营场景。';
+        } else if (dailyHrs >= 6) {
+            adviceMsgSpan.innerHTML = '<i class="fas fa-chart-line"></i> 优秀！高利用率带来可观收益，投资回收期表现良好。';
+        } else {
+            adviceMsgSpan.innerHTML = '<i class="fas fa-charging-station"></i> 可尝试调整服务费或增加夜间优惠，进一步提升日均有效时长。';
+        }
+        
+        // 返回用于图表数据
+        return {
+            totalInvestment,
+            annualProfit,
+            paybackYears,
+            annualRevenue,
+            annualOpex,
+            count,
+            power,
+            dailyHrs,
+            fee
+        };
+    }
+    
+    // 生成未来10年累计现金流数据 (第0年: -总初始投资, 之后逐年增加净利润)
+    function getCashflowData(annualProfit, totalInvestment, years = 10) {
+        let cumulative = [];
+        let cum = -totalInvestment;
+        cumulative.push(cum); // 第0年初
+        for (let i = 1; i <= years; i++) {
+            cum += annualProfit;
+            cumulative.push(cum);
+        }
+        return cumulative;
+    }
+    
+    // 更新图表 (使用chart.js)
+    function updateChart(annualProfit, totalInvestment) {
+        const ctx = document.getElementById('cashflowChart').getContext('2d');
+        const yearsLabels = [];
+        for (let i = 0; i <= 10; i++) {
+            yearsLabels.push(i === 0 ? '初始(0)' : `第${i}年`);
+        }
+        const cashflowData = getCashflowData(annualProfit, totalInvestment, 10);
+        
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+        
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: yearsLabels,
+                datasets: [
+                    {
+                        label: '累计净现金流 (元)',
+                        data: cashflowData,
+                        borderColor: '#289672',
+                        backgroundColor: 'rgba(40, 150, 114, 0.05)',
+                        borderWidth: 3,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#1e6f5c',
+                        pointBorderColor: '#fff',
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.2,
+                        spanGaps: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let val = context.raw;
+                                return '累计现金流: ' + val.toLocaleString('zh-CN') + ' 元';
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: { font: { size: 11 } }
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: '金额 (元)',
+                            color: '#2c5a4c'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '运营年份',
+                            color: '#2c5a4c'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 额外标注回本点 (在图表上增加文本标注，简单加注释)
+        if (annualProfit > 0 && totalInvestment > 0) {
+            let paybackYearsExact = totalInvestment / annualProfit;
+            if (paybackYearsExact >= 0 && paybackYearsExact <= 10) {
+                // 在canvas上方附加一个小提示，不需要复杂annotation插件，可手动添加div提示
+                const chartBox = document.getElementById('cashflowChart');
+                let existingNote = document.getElementById('paybackNote');
+                if (!existingNote) {
+                    const note = document.createElement('div');
+                    note.id = 'paybackNote';
+                    note.style.fontSize = '0.7rem';
+                    note.style.textAlign = 'center';
+                    note.style.marginTop = '5px';
+                    note.style.color = '#c97e0a';
+                    chartBox.parentNode.insertBefore(note, chartBox.nextSibling);
+                }
+                const noteDiv = document.getElementById('paybackNote');
+                if (noteDiv) {
+                    noteDiv.innerHTML = `<i class="fas fa-flag-checkered"></i> 静态回本点约为 ${paybackYearsExact.toFixed(2)} 年，累计现金流在此年份附近转正。`;
+                }
+            } else {
+                const noteDiv = document.getElementById('paybackNote');
+                if (noteDiv) noteDiv.innerHTML = '';
+            }
+        } else {
+            const noteDiv = document.getElementById('paybackNote');
+            if (noteDiv) noteDiv.innerHTML = '<i class="fas fa-ban"></i> 无法回本，累计现金流持续为负。';
+        }
+    }
+    
+    // 全局刷新所有数据
+    function refreshAll() {
+        const metrics = calculateMetrics();
+        const { totalInvestment, annualProfit } = metrics;
+        updateChart(annualProfit, totalInvestment);
+    }
+    
+    // 预设场景
+    function setPreset(presetType) {
+        switch(presetType) {
+            case 'residential': // 住宅小区 夜间充电为主
+                inputs.pileCount.value = 15;
+                inputs.powerKw.value = 7.0;
+                inputs.costPerUnit.value = 14000;
+                inputs.dailyHours.value = 3.2;
+                inputs.serviceFee.value = 0.45;
+                inputs.opexPerPile.value = 480;
+                inputs.subsidy.value = 10000;
+                break;
+            case 'office': // 办公园区
+                inputs.pileCount.value = 20;
+                inputs.powerKw.value = 7.0;
+                inputs.costPerUnit.value = 14500;
+                inputs.dailyHours.value = 5.0;
+                inputs.serviceFee.value = 0.55;
+                inputs.opexPerPile.value = 550;
+                inputs.subsidy.value = 15000;
+                break;
+            case 'commercial': // 商场
+                inputs.pileCount.value = 12;
+                inputs.powerKw.value = 11;
+                inputs.costPerUnit.value = 18000;
+                inputs.dailyHours.value = 6.5;
+                inputs.serviceFee.value = 0.70;
+                inputs.opexPerPile.value = 600;
+                inputs.subsidy.value = 20000;
+                break;
+            case 'high': // 高利用率 优质场景
+                inputs.pileCount.value = 8;
+                inputs.powerKw.value = 7.0;
+                inputs.costPerUnit.value = 15500;
+                inputs.dailyHours.value = 8.0;
+                inputs.serviceFee.value = 0.65;
+                inputs.opexPerPile.value = 520;
+                inputs.subsidy.value = 5000;
+                break;
+            default: break;
+        }
+        refreshAll();
+    }
+    
+    // 事件绑定
+    function bindEvents() {
+        for (let key in inputs) {
+            if (inputs[key]) {
+                inputs[key].addEventListener('input', refreshAll);
+                inputs[key].addEventListener('change', refreshAll);
+            }
+        }
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const preset = btn.getAttribute('data-preset');
+                if (preset) setPreset(preset);
+            });
+        });
+    }
+    
+    // 初始化
+    function init() {
+        bindEvents();
+        refreshAll();
+    }
+    
+    init();
+</script>
+</body>
+</html>
